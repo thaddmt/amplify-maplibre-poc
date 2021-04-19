@@ -1,8 +1,11 @@
 import Location, { Position } from "aws-sdk/clients/location";
-import { Auth } from "aws-amplify";
+import { Auth, API, graphqlOperation } from "aws-amplify";
+import * as subscriptions from "../graphql/subscriptions";
 import awsconfig from "../aws-exports";
 
 class AmplifyGeo {
+  subscription?: any;
+
   // amplify-amplifylocpoc1-dev-144437-unauthRole
   createClient = async () => {
     const credentials = await Auth.currentCredentials();
@@ -11,6 +14,21 @@ class AmplifyGeo {
       region: awsconfig.aws_project_region,
     });
     return client;
+  };
+
+  subscribeToGeofenceEvents = () => {
+    this.subscription = (API.graphql(
+      graphqlOperation(subscriptions.onCreateGeofenceBreaches)
+    ) as any).subscribe({
+      next: ({ provider, value }: any) => {
+        if (value.data.onCreateGeofenceBreaches)
+          console.log(
+            "Breached geofence " +
+              value.data.onCreateGeofenceBreaches.GeofenceId
+          );
+      },
+      error: (error: any) => console.warn(error),
+    });
   };
 
   searchForPlaces = (

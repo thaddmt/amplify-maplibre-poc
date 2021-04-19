@@ -41,6 +41,7 @@ async function initializeMap() {
 
 function App() {
   initializeMap();
+  Geo.subscribeToGeofenceEvents();
   return (
     <AmplifyAuthenticator>
       <div id="map" />

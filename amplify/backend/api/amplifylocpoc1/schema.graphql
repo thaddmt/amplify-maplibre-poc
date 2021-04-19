@@ -1,0 +1,7 @@
+type GeofenceBreaches @model {
+  id: ID!
+  GeofenceId: String!
+  DeviceId: String!
+  Time: String!
+  Position: [Float]!
+}
