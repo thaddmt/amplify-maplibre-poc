@@ -14,6 +14,7 @@ import { Geo } from "./AmplifyGeoPlugin/AmplifyGeo";
 // Maplibre
 import { Map, NavigationControl } from "maplibre-gl";
 import "./App.css";
+import { useEffect } from "react";
 
 const device1 = "device3",
   device2 = "device4";
@@ -71,53 +72,58 @@ function generateDevicePositionsData(positions) {
 function App() {
   var device1Positions = [],
     device2Positions = [];
-  initializeMap().then((map) => {
-    // Display device histories for device 1 and device2
-    getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
 
-    // "SIMULATION OF UPDATING DEVICE LOCATION"
-    // Update device locations using double click for device 1
-    // and shift double click for device 2
-    map.doubleClickZoom.disable();
-    map.on("dblclick", function (e) {
-      Geo.updateDevicePosition(
-        e.originalEvent.shiftKey ? device2 : device1,
-        [e.lngLat.lng, e.lngLat.lat],
-        "test-tracker-1"
-      );
-      console.log(e);
-      if (e.originalEvent.shiftKey) {
-        device2Positions.push([e.lngLat.lng, e.lngLat.lat]);
-        map
-          .getSource(device2)
-          .setData(generateDevicePositionsData(device2Positions));
-      } else {
-        device1Positions.push([e.lngLat.lng, e.lngLat.lat]);
-        map
-          .getSource(device1)
-          .setData(generateDevicePositionsData(device1Positions));
-      }
+  useEffect(() => {
+    initializeMap().then((map) => {
+      // Display device histories for device 1 and device2
+      getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
+
+      // "SIMULATION OF UPDATING DEVICE LOCATION"
+      // Update device locations using double click for device 1
+      // and shift double click for device 2
+      map.doubleClickZoom.disable();
+      map.on("dblclick", function (e) {
+        Geo.updateDevicePosition(
+          e.originalEvent.shiftKey ? device2 : device1,
+          [e.lngLat.lng, e.lngLat.lat],
+          "test-tracker-1"
+        );
+        console.log(e);
+        if (e.originalEvent.shiftKey) {
+          device2Positions.push([e.lngLat.lng, e.lngLat.lat]);
+          map
+            .getSource(device2)
+            .setData(generateDevicePositionsData(device2Positions));
+        } else {
+          device1Positions.push([e.lngLat.lng, e.lngLat.lat]);
+          map
+            .getSource(device1)
+            .setData(generateDevicePositionsData(device1Positions));
+        }
+      });
     });
-  });
 
-  // Customers can listen to the breach notifications for a particular tracker and geofence collection.
-  Geo.subscribeToGeofenceEvents().subscribe({
-    next: (value) => {
-      if (value.breach && value.breach.DeviceId) {
-        const breach = value.breach;
-        console.log(
-          breach.DeviceId +
+    // Customers can listen to the breach notifications for a particular tracker and geofence collection.
+    const subscription = Geo.subscribeToGeofenceEvents().subscribe({
+      next: (value) => {
+        if (value.breach && value.breach.DeviceId) {
+          const breach = value.breach;
+          console.log(
+            breach.DeviceId +
             " breached " +
             breach.GeofenceId +
             " on " +
             breach.Time +
             " at " +
             breach.Position
-        );
-      }
-    },
-    error: (error) => console.warn(error),
-  });
+          );
+        }
+      },
+      error: (error) => console.warn(error),
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   return (
     <AmplifyAuthenticator>
       <div id="map" />
