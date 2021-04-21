@@ -121,6 +121,38 @@ class AmplifyGeo {
       );
     });
   };
+
+  updateDevicePosition = (
+    deviceId: string,
+    position: [number],
+    trackerName?: string
+  ) => {
+    const params = {
+      TrackerName: trackerName || "test-tracker-1", // If not available take default from aws_config
+      Updates: [
+        {
+          DeviceId: deviceId,
+          Position: position,
+          SampleTime: new Date(),
+        },
+      ],
+    };
+    return new Promise(async (resolve, reject) => {
+      (await this.createClient()).batchUpdateDevicePosition(
+        params,
+        (err, data) => {
+          if (err) {
+            console.error(err);
+            reject(err);
+          }
+          if (data) {
+            console.log(data);
+            resolve(data);
+          }
+        }
+      );
+    });
+  };
 }
 
 export const Geo = new AmplifyGeo();

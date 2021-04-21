@@ -44,12 +44,10 @@ async function displayDevicePositions(deviceId, devicePositions, map, color) {
   var positions = [];
   devicePositions.forEach((element) => {
     positions.push(element.Position);
-    // new mapboxgl.Marker().setLngLat(element.Position).addTo(map);
   });
   map.on("load", function () {
     map.addSource(deviceId, {
       type: "geojson",
-      //        data: "https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson",
       data: {
         type: "FeatureCollection",
         features: [
@@ -78,6 +76,7 @@ async function displayDevicePositions(deviceId, devicePositions, map, color) {
 
 function App() {
   initializeMap().then(async (map) => {
+    // Display device histories
     var results = await Geo.getDevicePositionHistory(
       "device1",
       "test-tracker-1"
@@ -85,6 +84,16 @@ function App() {
     displayDevicePositions("device1", results.DevicePositions, map, "red");
     results = await Geo.getDevicePositionHistory("device2", "test-tracker-1");
     displayDevicePositions("device2", results.DevicePositions, map, "blue");
+
+    // Update device locations
+    map.doubleClickZoom.disable();
+    map.on("dblclick", function (e) {
+      Geo.updateDevicePosition(
+        e.originalEvent.shiftKey ? "device2" : "device1",
+        [e.lngLat.lng, e.lngLat.lat],
+        "test-tracker-1"
+      );
+    });
   });
   Geo.subscribeToGeofenceEvents();
   return (
