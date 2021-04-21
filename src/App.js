@@ -15,6 +15,9 @@ import { Geo } from "./AmplifyGeoPlugin/AmplifyGeo";
 import { Map, NavigationControl } from "maplibre-gl";
 import "./App.css";
 
+const device1 = "device3",
+  device2 = "device4";
+
 // Customers initialize Amplify
 Amplify.configure(awsconfig);
 
@@ -47,62 +50,52 @@ async function initializeMap() {
   return map;
 }
 
-// Adding device locations (and history) is not provided through controls. Customers
-// get the positions from Amplify and add to their MapLibre map.
-async function displayDevicePositions(deviceId, devicePositions, map, color) {
-  var positions = [];
-  devicePositions.forEach((element) => {
-    positions.push(element.Position);
-  });
-  map.on("load", function () {
-    map.addSource(deviceId, {
-      type: "geojson",
-      data: {
-        type: "FeatureCollection",
-        features: [
-          {
-            properties: {},
-            type: "Feature",
-            geometry: {
-              type: "MultiLineString",
-              coordinates: [positions],
-            },
-          },
-        ],
+// Possible addition to Geo.getDevicePositionHistory
+function generateDevicePositionsData(positions) {
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        properties: {},
+        type: "Feature",
+        geometry: {
+          type: "MultiLineString",
+          coordinates: [positions],
+        },
       },
-    });
-    map.addLayer({
-      id: deviceId + "layer",
-      source: deviceId,
-      type: "line",
-      paint: {
-        "line-color": color,
-        "line-width": 3,
-      },
-    });
-  });
+    ],
+  };
 }
 
 function App() {
+  var device1Positions = [],
+    device2Positions = [];
   initializeMap().then(async (map) => {
     // Display device histories for device 1 and device2
-    var results = await Geo.getDevicePositionHistory(
-      "device1",
-      "test-tracker-1"
-    );
-    displayDevicePositions("device1", results.DevicePositions, map, "red");
-    results = await Geo.getDevicePositionHistory("device2", "test-tracker-1");
-    displayDevicePositions("device2", results.DevicePositions, map, "blue");
+    await getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
 
+    // "SIMULATION OF UPDATING DEVICE LOCATION"
     // Update device locations using double click for device 1
     // and shift double click for device 2
     map.doubleClickZoom.disable();
     map.on("dblclick", function (e) {
       Geo.updateDevicePosition(
-        e.originalEvent.shiftKey ? "device2" : "device1",
+        e.originalEvent.shiftKey ? device2 : device1,
         [e.lngLat.lng, e.lngLat.lat],
         "test-tracker-1"
       );
+      console.log(e);
+      if (e.originalEvent.shiftKey) {
+        device2Positions.push([e.lngLat.lng, e.lngLat.lat]);
+        map
+          .getSource(device2)
+          .setData(generateDevicePositionsData(device2Positions));
+      } else {
+        device1Positions.push([e.lngLat.lng, e.lngLat.lat]);
+        map
+          .getSource(device1)
+          .setData(generateDevicePositionsData(device1Positions));
+      }
     });
   });
 
@@ -128,6 +121,55 @@ function App() {
     <AmplifyAuthenticator>
       <div id="map" />
     </AmplifyAuthenticator>
+  );
+}
+
+// Adding device locations (and history) is not provided through controls. Customers
+// get the positions from Amplify and add to their MapLibre map.
+async function displayDevicePositionsDataOnMap(deviceId, data, map, color) {
+  map.on("load", function () {
+    map.addSource(deviceId, {
+      type: "geojson",
+      data: data,
+    });
+    map.addLayer({
+      id: deviceId + "layer",
+      source: deviceId,
+      type: "line",
+      paint: {
+        "line-color": color || "black",
+        "line-width": 3,
+      },
+    });
+  });
+}
+
+async function getAndDisplayDeviceHistories(
+  map,
+  device1Positions,
+  device2Positions
+) {
+  (
+    await Geo.getDevicePositionHistory(device1, "test-tracker-1")
+  ).DevicePositions.forEach((element) => {
+    device1Positions.push(element.Position);
+  });
+  displayDevicePositionsDataOnMap(
+    device1,
+    generateDevicePositionsData(device1Positions),
+    map,
+    "red"
+  );
+  (
+    await Geo.getDevicePositionHistory(device2, "test-tracker-1")
+  ).DevicePositions.forEach((element) => {
+    device2Positions.push(element.Position);
+  });
+  displayDevicePositionsDataOnMap(
+    device2,
+    generateDevicePositionsData(device2Positions),
+    map,
+    "blue"
   );
 }
 
