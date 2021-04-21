@@ -24,9 +24,9 @@ Amplify.configure(awsconfig);
 
 // Customers initialize Maplibre Map
 async function initializeMap() {
-  console.log("0");
+
   const credentials = await Auth.currentCredentials();
-  console.log("1");
+
   // actually initialize the map
   const map = new Map({
     container: "map",
@@ -88,7 +88,6 @@ function App() {
           [e.lngLat.lng, e.lngLat.lat],
           "test-tracker-1"
         );
-        console.log(e);
         if (e.originalEvent.shiftKey) {
           device2Positions.push([e.lngLat.lng, e.lngLat.lat]);
           map

@@ -74,7 +74,6 @@ class AmplifyGeo {
           reject(err);
         }
         if (data) {
-          console.log(data);
           resolve(data);
         }
       });
@@ -95,7 +94,6 @@ class AmplifyGeo {
             reject(err);
           }
           if (data) {
-            console.log(data);
             resolve(data);
           }
         }
@@ -117,7 +115,6 @@ class AmplifyGeo {
             reject(err);
           }
           if (data) {
-            console.log(data);
             resolve(data);
           }
         }
@@ -149,7 +146,6 @@ class AmplifyGeo {
             reject(err);
           }
           if (data) {
-            console.log(data);
             resolve(data);
           }
         }
