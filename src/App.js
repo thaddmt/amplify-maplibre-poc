@@ -19,7 +19,7 @@ async function initializeMap() {
   const map = new Map({
     container: "map",
     center: [-123.1187, 49.2819], // initial map center point
-    zoom: 10, // initial map zoom
+    zoom: 13, // initial map zoom
     style: "test-maps-1",
     transformRequest: new MapBoxRequest(await Auth.currentCredentials())
       .transformRequest,
@@ -37,10 +37,55 @@ async function initializeMap() {
     }),
     "bottom-left"
   );
+  return map;
+}
+
+async function displayDevicePositions(deviceId, devicePositions, map, color) {
+  var positions = [];
+  devicePositions.forEach((element) => {
+    positions.push(element.Position);
+    // new mapboxgl.Marker().setLngLat(element.Position).addTo(map);
+  });
+  map.on("load", function () {
+    map.addSource(deviceId, {
+      type: "geojson",
+      //        data: "https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [
+          {
+            properties: {},
+            type: "Feature",
+            geometry: {
+              type: "MultiLineString",
+              coordinates: [positions],
+            },
+          },
+        ],
+      },
+    });
+    map.addLayer({
+      id: deviceId + "layer",
+      source: deviceId,
+      type: "line",
+      paint: {
+        "line-color": color,
+        "line-width": 3,
+      },
+    });
+  });
 }
 
 function App() {
-  initializeMap();
+  initializeMap().then(async (map) => {
+    var results = await Geo.getDevicePositionHistory(
+      "device1",
+      "test-tracker-1"
+    );
+    displayDevicePositions("device1", results.DevicePositions, map, "red");
+    results = await Geo.getDevicePositionHistory("device2", "test-tracker-1");
+    displayDevicePositions("device2", results.DevicePositions, map, "blue");
+  });
   Geo.subscribeToGeofenceEvents();
   return (
     <AmplifyAuthenticator>

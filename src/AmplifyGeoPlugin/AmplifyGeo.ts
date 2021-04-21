@@ -21,9 +21,12 @@ class AmplifyGeo {
       graphqlOperation(subscriptions.onCreateGeofenceBreaches)
     ) as any).subscribe({
       next: ({ provider, value }: any) => {
+        console.log(value);
         if (value.data.onCreateGeofenceBreaches)
           console.log(
-            "Breached geofence " +
+            "Device " +
+              value.data.onCreateGeofenceBreaches.DeviceId +
+              " breached geofence " +
               value.data.onCreateGeofenceBreaches.GeofenceId
           );
       },
@@ -72,6 +75,50 @@ class AmplifyGeo {
           resolve(data);
         }
       });
+    });
+  };
+
+  getDevicePositions = (deviceIds: [string], trackerName?: string) => {
+    const params = {
+      TrackerName: trackerName || "test-tracker-1", // If not available take default from aws_config
+      DeviceIds: deviceIds,
+    };
+    return new Promise(async (resolve, reject) => {
+      (await this.createClient()).batchGetDevicePosition(
+        params,
+        (err, data) => {
+          if (err) {
+            console.error(err);
+            reject(err);
+          }
+          if (data) {
+            console.log(data);
+            resolve(data);
+          }
+        }
+      );
+    });
+  };
+
+  getDevicePositionHistory = (deviceId: string, trackerName?: string) => {
+    const params = {
+      TrackerName: trackerName || "test-tracker-1", // If not available take default from aws_config
+      DeviceId: deviceId,
+    };
+    return new Promise(async (resolve, reject) => {
+      (await this.createClient()).getDevicePositionHistory(
+        params,
+        (err, data) => {
+          if (err) {
+            console.error(err);
+            reject(err);
+          }
+          if (data) {
+            console.log(data);
+            resolve(data);
+          }
+        }
+      );
     });
   };
 }

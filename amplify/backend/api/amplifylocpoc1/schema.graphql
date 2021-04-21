@@ -1,4 +1,4 @@
-type GeofenceBreaches @model {
+type GeofenceBreaches @aws_iam @model {
   id: ID!
   GeofenceId: String!
   DeviceId: String!
