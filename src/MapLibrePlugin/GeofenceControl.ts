@@ -41,6 +41,8 @@ class GeofenceControl {
   }
 
   onAdd(map: Map) {
+    console.log("Entering geofence module");
+    console.log(map);
     this._map = map;
     this._container = this._createElement("div", "mapboxgl-ctrl");
 

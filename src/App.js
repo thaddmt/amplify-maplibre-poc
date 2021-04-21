@@ -23,18 +23,19 @@ Amplify.configure(awsconfig);
 
 // Customers initialize Maplibre Map
 async function initializeMap() {
+  console.log("0");
+  const credentials = await Auth.currentCredentials();
+  console.log("1");
   // actually initialize the map
   const map = new Map({
     container: "map",
-    center: [-123.1187, 49.2819], // initial map center point
-    zoom: 13, // initial map zoom
+    center: [-123.1187, 49.2819],
+    zoom: 13,
     style: "test-maps-1",
-    transformRequest: new MapBoxRequest(await Auth.currentCredentials())
+    transformRequest: new MapBoxRequest(credentials)
       .transformRequest,
   });
-
   map.addControl(new NavigationControl(), "top-left");
-
   // Customers ass new controls provided by new MapLibre Plugin
   map.addControl(
     new SearchControl({ placeIndexResource: "test-places-1", api: Geo }),
@@ -70,9 +71,9 @@ function generateDevicePositionsData(positions) {
 function App() {
   var device1Positions = [],
     device2Positions = [];
-  initializeMap().then(async (map) => {
+  initializeMap().then((map) => {
     // Display device histories for device 1 and device2
-    await getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
+    getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
 
     // "SIMULATION OF UPDATING DEVICE LOCATION"
     // Update device locations using double click for device 1
