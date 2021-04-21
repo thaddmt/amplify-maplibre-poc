@@ -1,8 +1,9 @@
 import Location, { Position } from "aws-sdk/clients/location";
 import { Auth, API, graphqlOperation } from "aws-amplify";
 import * as subscriptions from "../graphql/subscriptions";
+import { GeofenceBreaches } from "../API";
 import awsconfig from "../aws-exports";
-
+import Observable from "zen-observable-ts";
 class AmplifyGeo {
   subscription?: any;
 
@@ -16,21 +17,23 @@ class AmplifyGeo {
     return client;
   };
 
+  // TODO: add filtering for geofence collection and tracker name
   subscribeToGeofenceEvents = () => {
-    this.subscription = (API.graphql(
-      graphqlOperation(subscriptions.onCreateGeofenceBreaches)
-    ) as any).subscribe({
-      next: ({ provider, value }: any) => {
-        console.log(value);
-        if (value.data.onCreateGeofenceBreaches)
-          console.log(
-            "Device " +
-              value.data.onCreateGeofenceBreaches.DeviceId +
-              " breached geofence " +
-              value.data.onCreateGeofenceBreaches.GeofenceId
-          );
-      },
-      error: (error: any) => console.warn(error),
+    return new Observable((observer) => {
+      const subscription = (API.graphql(
+        graphqlOperation(subscriptions.onCreateGeofenceBreaches)
+      ) as any).subscribe({
+        next: ({ provider, value }: any) => {
+          var breach: GeofenceBreaches;
+          if (value.data.onCreateGeofenceBreaches) {
+            breach = value.data.onCreateGeofenceBreaches;
+            observer.next({ breach });
+          }
+        },
+        error: (error: any) => observer.error({ error }),
+      });
+
+      return () => subscription.unsubscribe();
     });
   };
 

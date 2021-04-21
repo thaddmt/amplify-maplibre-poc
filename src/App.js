@@ -107,7 +107,23 @@ function App() {
   });
 
   // Customers can listen to the breach notifications for a particular tracker and geofence collection.
-  Geo.subscribeToGeofenceEvents();
+  Geo.subscribeToGeofenceEvents().subscribe({
+    next: (value) => {
+      if (value.breach && value.breach.DeviceId) {
+        const breach = value.breach;
+        console.log(
+          breach.DeviceId +
+            " breached " +
+            breach.GeofenceId +
+            " on " +
+            breach.Time +
+            " at " +
+            breach.Position
+        );
+      }
+    },
+    error: (error) => console.warn(error),
+  });
   return (
     <AmplifyAuthenticator>
       <div id="map" />
