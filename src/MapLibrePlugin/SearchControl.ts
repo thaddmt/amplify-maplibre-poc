@@ -94,7 +94,7 @@ class SearchControl {
         );
         const _displayResultOnMap = this._displayResultOnMap;
         anchorForListItem.addEventListener("click", function () {
-          _displayResultOnMap(element.Place.Geometry.Point);
+          _displayResultOnMap(element.Place.Geometry.Point, element.Place);
         });
         anchorForListItem.innerHTML = element.Place.Label;
       });
@@ -141,8 +141,17 @@ class SearchControl {
     });
   }
 
-  _displayResultOnMap(point: any) {
-    this._map.flyTo({ center: point, zoom: 10 });
+  _displayResultOnMap(point: any, place: any) {
+    this._map.flyTo({ center: point });
+    this._markers.forEach((element: mapboxgl.Marker) => {
+      element.setPopup(null);
+      if (element.getLngLat().lng === point[0] && element.getLngLat().lat === point[1]) {
+        element.setPopup(new mapboxgl.Popup({ offset: 25 }).setText(
+          place.Label
+        ));
+        element.togglePopup();
+      }
+    })
   }
 
   _createElement(tagName: string, className?: string, container?: HTMLElement) {

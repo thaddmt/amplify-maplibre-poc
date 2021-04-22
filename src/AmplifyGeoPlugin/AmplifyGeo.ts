@@ -63,6 +63,30 @@ class AmplifyGeo {
     });
   };
 
+  searchForCoordinates = (
+    param: Position,
+    placeIndexResource?: string
+  ) => {
+    const params = {
+      IndexName: placeIndexResource || "test-places-1", // If not available take default from aws_config
+      Position: param,
+    };
+    return new Promise(async (resolve, reject) => {
+      (await this.createClient()).searchPlaceIndexForPosition(
+        params,
+        (err, data) => {
+          if (err) {
+            console.error(err);
+            reject(err);
+          }
+          if (data) {
+            resolve(data);
+          }
+        }
+      );
+    });
+  };
+
   listGeofences = (collectionName?: string) => {
     const params = {
       CollectionName: collectionName || "test-geofence-collection-1", // If not available take default from aws_config
