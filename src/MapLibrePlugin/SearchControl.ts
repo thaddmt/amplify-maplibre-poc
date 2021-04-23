@@ -148,7 +148,7 @@ class SearchControl {
       if (element.getLngLat().lng === point[0] && element.getLngLat().lat === point[1]) {
         element.setPopup(new mapboxgl.Popup({ offset: 25 }).setText(
           place.Label
-        ));
+        )).addTo(this._map);
         element.togglePopup();
       }
     })
