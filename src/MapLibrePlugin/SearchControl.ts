@@ -47,7 +47,7 @@ class SearchControl {
       "search-text-field",
       this._innerContainer
     );
-    this._searchTextField.addEventListener("change", this._performSearch);
+    // this._searchTextField.addEventListener("change", this._performSearch);
 
     this._searchButton = this._createElement(
       "button",
@@ -98,6 +98,10 @@ class SearchControl {
         });
         anchorForListItem.innerHTML = element.Place.Label;
       });
+
+      if (results.Results.length == 1) {
+        this._displayResultOnMap(results.Results[0].Place.Geometry.Point, results.Results[0].Place);
+      }
     }
   }
 

@@ -16,8 +16,8 @@ import mapboxgl, { Map, NavigationControl } from "maplibre-gl";
 import "./App.css";
 import { useEffect } from "react";
 
-const device1 = "device3",
-  device2 = "device4";
+const device1 = "device01",
+  device2 = "device02";
 var reverseGeocodeMarker;
 
 // Customers initialize Amplify
@@ -35,12 +35,12 @@ async function initializeMap() {
     style: "test-maps-1",
     transformRequest: new MapBoxRequest(credentials).transformRequest,
   });
-  map.addControl(new NavigationControl(), "top-left");
+  map.addControl(new NavigationControl(), "top-right");
 
   // Customers add new control provided by new MapLibre Plugin for searching places by text
   map.addControl(
     new SearchControl({ placeIndexResource: "test-places-1", api: Geo }),
-    "top-right"
+    "top-left"
   );
 
   // Customers add new control provided by new MapLibre Plugin for visualizing geofences
@@ -85,7 +85,11 @@ function App() {
       });
 
       // Reverse geocode (Without using maplibre plugin)
+      // Command click to get the geocode details
       map.on("click", async function (e) {
+        if (!e.originalEvent.metaKey) {
+          return;
+        }
         if (reverseGeocodeMarker) {
           reverseGeocodeMarker.remove();
         }
