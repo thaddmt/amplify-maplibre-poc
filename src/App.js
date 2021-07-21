@@ -1,32 +1,26 @@
 // Existing Amplify Library
 import Amplify, { Auth } from "aws-amplify";
 import { AmplifyAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
-import { AuthState, onAuthUIStateChange } from '@aws-amplify/ui-components';
+import { AuthState, onAuthUIStateChange } from "@aws-amplify/ui-components";
 import awsconfig from "./aws-exports";
 
-// New MapLibre Plugin
-import SearchControl from "./MapLibrePlugin/SearchControl";
-import MapBoxRequest from "./MapLibrePlugin/MapBoxRequest";
-import GeofenceControl from "./MapLibrePlugin/GeofenceControl";
+// https://github.com/aws-amplify/maplibre-gl-js-amplify
+import { AmplifyMapLibreRequest, drawPoints } from "maplibre-gl-js-amplify";
 
-// New Amplify Plugin
-import { Geo } from "./AmplifyGeoPlugin/AmplifyGeo";
+// https://github.com/maplibre/maplibre-gl-geocoder
+import MaplibreGeocoder from "@maplibre/maplibre-gl-geocoder";
+import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 
 // Maplibre
-import mapboxgl, { Map, NavigationControl } from "maplibre-gl";
+import maplibregl, { Map } from "maplibre-gl";
 import "./App.css";
 import { useEffect, useState } from "react";
-
-const device1 = "device01",
-  device2 = "device02";
-const device1Positions = [], device2Positions = [];
-var reverseGeocodeMarker;
+import { Geo } from "./AmplifyGeoPlugin/AmplifyGeo";
 
 // Customers initialize Amplify
 Amplify.configure(awsconfig);
 
 function App() {
-
   const [authState, setAuthState] = useState();
   const [user, setUser] = useState();
   const [map, setMap] = useState();
@@ -53,26 +47,81 @@ function App() {
         center: [-123.1187, 49.2819],
         zoom: 13,
         style: "test-maps-1",
-        transformRequest: new MapBoxRequest(credentials).transformRequest,
+        transformRequest: new AmplifyMapLibreRequest(credentials, "us-west-2")
+          .transformRequest,
       });
       setMap(map);
-      map.addControl(new NavigationControl(), "top-right");
 
-      // Developers add new control provided by new MapLibre Plugin for searching places by text
-      map.addControl(
-        new SearchControl({ placeIndexResource: "test-places-1", api: Geo }),
-        "top-left"
-      );
+      // Create a Geo API from the Location service apis
+      // This can be turned into a plugin so or wrapped around MaplibreGeocoder specifically for interfacing with amplify
+      const geo = {
+        forwardGeocode: async (config) => {
+          const data = await Geo.searchForPlaces(
+            config.query,
+            config.proximity
+          );
 
-      // Developers add new control provided by new MapLibre Plugin for visualizing geofences
-      map.addControl(
-        new GeofenceControl({
-          geofenceCollectionResource: "test-geofence-collection-1",
-          api: Geo,
-        }),
-        "bottom-left"
-      );
-      return map;
+          const features = data.Results.map((result) => {
+            const { Geometry, ...otherResults } = result.Place;
+            return {
+              type: "Feature",
+              properties: { ...otherResults },
+              geometry: { type: "Point", coordinates: Geometry.Point },
+              place_name: otherResults.Label,
+              text: otherResults.Label,
+              center: Geometry.Point,
+            };
+          });
+          return { features };
+        },
+        reverseGeocode: async (config) => {
+          const data = await Geo.searchForCoordinates(config.query);
+          const features = data.Results.map((result) => {
+            const { Geometry, ...otherResults } = result.Place;
+            return {
+              type: "Feature",
+              properties: { ...otherResults },
+              geometry: { type: "Point", coordinates: Geometry.Point },
+              place_name: otherResults.Label,
+              text: otherResults.Label,
+              center: Geometry.Point,
+            };
+          });
+          return { features };
+        },
+      };
+
+      const geocoder = new MaplibreGeocoder(geo, {
+        maplibregl: maplibregl,
+        showResultMarkers: true,
+        popup: true,
+        reverseGeocode: true,
+      });
+      map.addControl(geocoder);
+
+      // Render some coordinates on the map using the drawPoints method
+      map.on("load", function () {
+        drawPoints(
+          "foobar",
+          [
+            [-123.1187, 49.2819],
+            [-122.849, 49.1913],
+          ],
+          map,
+          {
+            showCluster: true,
+            unclusteredOptions: {
+              showMarkerPopup: true,
+              popupBackgroundColor: "red",
+              popupFontColor: "purple",
+            },
+            clusterOptions: {
+              showCount: true,
+            },
+          },
+          "VectorEsriNavigation"
+        );
+      });
     }
 
     if (!map && authState === AuthState.SignedIn && user) {
@@ -80,157 +129,13 @@ function App() {
     }
   }, [authState, user, map]);
 
-  // Once map is initialized add various stuff (not provided by Amplify or new MapLibre plugins)
-  useEffect(() => {
-    if (!map) {
-      return;
-    }
-    // Display device histories for device 1 and device2 (without using maplibre plugins)
-    getAndDisplayDeviceHistories(map, device1Positions, device2Positions);
-
-    // "SIMULATION OF UPDATING DEVICE LOCATION"
-    // Update device locations using double click for device 1
-    // and shift double click for device 2
-    map.doubleClickZoom.disable();
-    map.on("dblclick", function (e) {
-      Geo.updateDevicePosition(
-        e.originalEvent.shiftKey ? device2 : device1,
-        [e.lngLat.lng, e.lngLat.lat],
-        "test-tracker-1"
-      );
-      if (e.originalEvent.shiftKey) {
-        device2Positions.push([e.lngLat.lng, e.lngLat.lat]);
-        map
-          .getSource(device2)
-          .setData(generateDevicePositionsData(device2Positions));
-      } else {
-        device1Positions.push([e.lngLat.lng, e.lngLat.lat]);
-        map
-          .getSource(device1)
-          .setData(generateDevicePositionsData(device1Positions));
-      }
-    });
-
-    // Reverse geocode (Without using maplibre plugin)
-    // Command click to get the geocode details
-    map.on("click", async function (e) {
-      if (!e.originalEvent.metaKey) {
-        return;
-      }
-      if (reverseGeocodeMarker) {
-        reverseGeocodeMarker.remove();
-      }
-      const response = await Geo.searchForCoordinates(
-        [e.lngLat.lng, e.lngLat.lat],
-        "test-places-1"
-      );
-      reverseGeocodeMarker = new mapboxgl.Marker({ color: "red" })
-        .setLngLat(e.lngLat)
-        .setPopup(
-          new mapboxgl.Popup({ offset: 25 }).setText(
-            response.Results[0].Place.Label
-          )
-        )
-        .addTo(map);
-      reverseGeocodeMarker.togglePopup();
-    });
-
-    // Customers can listen to the breach notifications for a particular tracker and geofence collection.
-    // TODO: Subscribe for a specific deviceId and/or geofenceId
-    const subscription = Geo.subscribeToGeofenceEvents().subscribe({
-      next: (value) => {
-        if (value.breach && value.breach.DeviceId) {
-          const breach = value.breach;
-          console.log(
-            breach.DeviceId +
-              " breached " +
-              breach.GeofenceId +
-              " on " +
-              breach.Time +
-              " at " +
-              breach.Position
-          );
-        }
-      },
-      error: (error) => console.warn(error),
-    });
-
-    return () => subscription.unsubscribe();
-  }, [map]);
-
-  return authState === AuthState.SignedIn && user ?
-    (<div className="App">
+  return authState === AuthState.SignedIn && user ? (
+    <div className="App">
       <AmplifySignOut />
       <div id="map" />
-
-      </div>) : (
+    </div>
+  ) : (
     <AmplifyAuthenticator />
-  );
-}
-
-// Possible addition to Geo.getDevicePositionHistory
-function generateDevicePositionsData(positions) {
-  return {
-    type: "FeatureCollection",
-    features: [
-      {
-        properties: {},
-        type: "Feature",
-        geometry: {
-          type: "MultiLineString",
-          coordinates: [positions],
-        },
-      },
-    ],
-  };
-}
-
-// Adding device locations (and history) is not provided through controls. Customers
-// get the positions from Amplify and add to their MapLibre map.
-async function displayDevicePositionsDataOnMap(deviceId, data, map, color) {
-  map.on("load", function () {
-    map.addSource(deviceId, {
-      type: "geojson",
-      data: data,
-    });
-    map.addLayer({
-      id: deviceId + "layer",
-      source: deviceId,
-      type: "line",
-      paint: {
-        "line-color": color || "black",
-        "line-width": 3,
-      },
-    });
-  });
-}
-
-async function getAndDisplayDeviceHistories(
-  map,
-  device1Positions,
-  device2Positions
-) {
-  (
-    await Geo.getDevicePositionHistory(device1, "test-tracker-1")
-  ).DevicePositions.forEach((element) => {
-    device1Positions.push(element.Position);
-  });
-  displayDevicePositionsDataOnMap(
-    device1,
-    generateDevicePositionsData(device1Positions),
-    map,
-    "red"
-  );
-  (
-    await Geo.getDevicePositionHistory(device2, "test-tracker-1")
-  ).DevicePositions.forEach((element) => {
-    device2Positions.push(element.Position);
-  });
-  displayDevicePositionsDataOnMap(
-    device2,
-    generateDevicePositionsData(device2Positions),
-    map,
-    "blue"
   );
 }
 
