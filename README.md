@@ -3,15 +3,10 @@
 ## Until these packages are published to npm...
 
 ```
-git clone git@github.com:aws-amplify/maplibre-gl-js-amplify.git
-yarn build
-yarn link
-
 git clone git@github.com:maplibre/maplibre-gl-geocoder.git
 yarn link
 
 -- Go to amazon-location-service-poc-amplify
-yarn link "maplibre-gl-js-amplify"
 yarn link "maplibre-gl-geocoder
 ```
 
