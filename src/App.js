@@ -15,7 +15,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import maplibregl, { Map } from "maplibre-gl";
 import "./App.css";
 import { useEffect, useState } from "react";
-import { Geo } from "./AmplifyGeoPlugin/AmplifyGeo";
+import { Geo } from "@aws-amplify/geo";
 
 // Customers initialize Amplify
 Amplify.configure(awsconfig);
@@ -41,12 +41,14 @@ function App() {
     async function initializeMap() {
       const credentials = await Auth.currentCredentials();
 
+      const defaultMap = Geo.getDefaultMap();
+
       // actually initialize the map
       const map = new Map({
         container: "map",
         center: [-123.1187, 49.2819],
         zoom: 13,
-        style: "test-maps-1",
+        style: defaultMap.mapName,
         transformRequest: new AmplifyMapLibreRequest(credentials, "us-west-2")
           .transformRequest,
       });
@@ -54,50 +56,50 @@ function App() {
 
       // Create a Geo API from the Location service apis
       // This can be turned into a plugin so or wrapped around MaplibreGeocoder specifically for interfacing with amplify
-      const geo = {
+      // This will be moved to a plugin for geocoder
+      const geocoderApi = {
         forwardGeocode: async (config) => {
-          const data = await Geo.searchForPlaces(
-            config.query,
-            config.proximity
-          );
-
-          const features = data.Results.map((result) => {
-            const { Geometry, ...otherResults } = result.Place;
+          const data = await Geo.searchByText(config.query, {
+            biasPosition: config.proximity,
+          });
+          const features = data.map((result) => {
+            const { geometry, ...otherResults } = result;
             return {
               type: "Feature",
+              geometry: { type: "Point", coordinates: geometry.point },
               properties: { ...otherResults },
-              geometry: { type: "Point", coordinates: Geometry.Point },
-              place_name: otherResults.Label,
-              text: otherResults.Label,
-              center: Geometry.Point,
+              place_name: otherResults.label,
+              text: otherResults.label,
+              center: geometry.point,
             };
           });
           return { features };
         },
         reverseGeocode: async (config) => {
-          const data = await Geo.searchForCoordinates(config.query);
-          const features = data.Results.map((result) => {
-            const { Geometry, ...otherResults } = result.Place;
-            return {
-              type: "Feature",
-              properties: { ...otherResults },
-              geometry: { type: "Point", coordinates: Geometry.Point },
-              place_name: otherResults.Label,
-              text: otherResults.Label,
-              center: Geometry.Point,
-            };
-          });
-          return { features };
+          const data = await Geo.searchByCoordinates(config.query);
+          const { geometry, ...otherResults } = data;
+          const feature = {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: geometry.point },
+            properties: { ...otherResults },
+            place_name: otherResults.label,
+            text: otherResults.label,
+            center: geometry.point,
+          };
+          return { features: [feature] };
         },
       };
 
-      const geocoder = new MaplibreGeocoder(geo, {
+      const geocoder = new MaplibreGeocoder(geocoderApi, {
         maplibregl: maplibregl,
         showResultMarkers: true,
         popup: true,
         reverseGeocode: true,
       });
       map.addControl(geocoder);
+      geocoder.on("error", (error) => {
+        console.log(error);
+      });
 
       // Render some coordinates on the map using the drawPoints method
       map.on("load", function () {
@@ -119,7 +121,7 @@ function App() {
               showCount: true,
             },
           },
-          "VectorEsriNavigation"
+          defaultMap.style
         );
       });
     }

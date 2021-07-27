@@ -1,0 +1,88 @@
+{
+  "Parameters": {
+    "authRoleName": {
+      "Type": "String"
+    },
+    "unauthRoleName": {
+      "Type": "String"
+    },
+    "mapName": {
+      "Type": "String"
+    },
+    "mapStyle": {
+      "Type": "String"
+    },
+    "pricingPlan": {
+      "Type": "String"
+    },
+    "env": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "Map": {
+      "Type": "AWS::Location::Map",
+      "Properties": {
+        "Configuration": {
+          "Style": {
+            "Ref": "mapStyle"
+          }
+        },
+        "MapName": {
+          "Ref": "mapName"
+        },
+        "PricingPlan": {
+          "Ref": "pricingPlan"
+        }
+      }
+    },
+    "MapPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "geo:GetMapStyleDescriptor",
+                "geo:GetMapGlyphs",
+                "geo:GetMapSprites",
+                "geo:GetMapTile"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "Map",
+                  "MapArn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "mapName"
+              },
+              "Policy"
+            ]
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "authRoleName"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "Name": {
+      "Value": {
+        "Ref": "Map"
+      }
+    }
+  }
+}

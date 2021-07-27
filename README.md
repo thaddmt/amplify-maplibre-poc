@@ -3,11 +3,21 @@
 ## Until these packages are published to npm...
 
 ```
+git clone git@github.com:aws-amplify/amplify-js.git
+git checkout geo/new-config
+yarn build
+cd packages/geo
+yarn link
+cd packages/core
+yarn link
+
 git clone git@github.com:maplibre/maplibre-gl-geocoder.git
 yarn link
 
 -- Go to amazon-location-service-poc-amplify
 yarn link "maplibre-gl-geocoder
+yarn link "@aws-amplify/geo"
+yarn link "@aws-amplify/core"
 ```
 
 ### `yarn start`
