@@ -17,6 +17,9 @@
     },
     "env": {
       "Type": "String"
+    },
+    "isDefault": {
+      "Type": "String"
     }
   },
   "Resources": {
@@ -29,7 +32,17 @@
           }
         },
         "MapName": {
-          "Ref": "mapName"
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "mapName"
+              },
+              {
+                "Ref": "env"
+              }
+            ]
+          ]
         },
         "PricingPlan": {
           "Ref": "pricingPlan"
@@ -61,10 +74,13 @@
         },
         "PolicyName": {
           "Fn::Join": [
-            "",
+            "-",
             [
               {
                 "Ref": "mapName"
+              },
+              {
+                "Ref": "env"
               },
               "Policy"
             ]
@@ -73,6 +89,9 @@
         "Roles": [
           {
             "Ref": "authRoleName"
+          },
+          {
+            "Ref": "unauthRoleName"
           }
         ]
       }
@@ -82,6 +101,11 @@
     "Name": {
       "Value": {
         "Ref": "Map"
+      }
+    },
+    "Style": {
+      "Value": {
+        "Ref": "mapStyle"
       }
     }
   }

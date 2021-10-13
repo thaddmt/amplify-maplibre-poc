@@ -30,7 +30,17 @@
           "Ref": "dataProvider"
         },
         "IndexName": {
-          "Ref": "indexName"
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "indexName"
+              },
+              {
+                "Ref": "env"
+              }
+            ]
+          ]
         },
         "PricingPlan": {
           "Ref": "pricingPlan"
@@ -65,10 +75,13 @@
         },
         "PolicyName": {
           "Fn::Join": [
-            "",
+            "-",
             [
               {
                 "Ref": "indexName"
+              },
+              {
+                "Ref": "env"
               },
               "Policy"
             ]
@@ -77,6 +90,9 @@
         "Roles": [
           {
             "Ref": "authRoleName"
+          },
+          {
+            "Ref": "unauthRoleName"
           }
         ]
       }

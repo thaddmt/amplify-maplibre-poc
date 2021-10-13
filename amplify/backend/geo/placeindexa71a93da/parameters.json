@@ -5,7 +5,8 @@
   "unauthRoleName": {
     "Ref": "UnauthRoleName"
   },
-  "mapName": "mappoc",
-  "mapStyle": "VectorEsriStreets",
+  "indexName": "placeindexa71a93da",
+  "dataProvider": "Esri",
+  "dataSourceIntendedUse": "SingleUse",
   "pricingPlan": "RequestBasedUsage"
 }

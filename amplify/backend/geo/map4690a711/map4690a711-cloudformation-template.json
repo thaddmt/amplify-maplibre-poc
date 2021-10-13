@@ -6,13 +6,10 @@
     "unauthRoleName": {
       "Type": "String"
     },
-    "indexName": {
+    "mapName": {
       "Type": "String"
     },
-    "dataProvider": {
-      "Type": "String"
-    },
-    "dataSourceIntendedUse": {
+    "mapStyle": {
       "Type": "String"
     },
     "pricingPlan": {
@@ -20,43 +17,55 @@
     },
     "env": {
       "Type": "String"
+    },
+    "isDefault": {
+      "Type": "String"
     }
   },
   "Resources": {
-    "PlaceIndex": {
-      "Type": "AWS::Location::PlaceIndex",
+    "Map": {
+      "Type": "AWS::Location::Map",
       "Properties": {
-        "DataSource": {
-          "Ref": "dataProvider"
+        "Configuration": {
+          "Style": {
+            "Ref": "mapStyle"
+          }
         },
-        "IndexName": {
-          "Ref": "indexName"
+        "MapName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "mapName"
+              },
+              {
+                "Ref": "env"
+              }
+            ]
+          ]
         },
         "PricingPlan": {
           "Ref": "pricingPlan"
-        },
-        "DataSourceConfiguration": {
-          "IntendedUse": {
-            "Ref": "dataSourceIntendedUse"
-          }
         }
       }
     },
-    "PlaceIndexPolicy": {
+    "MapPolicy": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyDocument": {
           "Statement": [
             {
               "Action": [
-                "geo:SearchPlaceIndexForPosition",
-                "geo:SearchPlaceIndexForText"
+                "geo:GetMapStyleDescriptor",
+                "geo:GetMapGlyphs",
+                "geo:GetMapSprites",
+                "geo:GetMapTile"
               ],
               "Effect": "Allow",
               "Resource": {
                 "Fn::GetAtt": [
-                  "PlaceIndex",
-                  "IndexArn"
+                  "Map",
+                  "MapArn"
                 ]
               }
             }
@@ -65,10 +74,13 @@
         },
         "PolicyName": {
           "Fn::Join": [
-            "",
+            "-",
             [
               {
-                "Ref": "indexName"
+                "Ref": "mapName"
+              },
+              {
+                "Ref": "env"
               },
               "Policy"
             ]
@@ -77,6 +89,9 @@
         "Roles": [
           {
             "Ref": "authRoleName"
+          },
+          {
+            "Ref": "unauthRoleName"
           }
         ]
       }
@@ -85,7 +100,12 @@
   "Outputs": {
     "Name": {
       "Value": {
-        "Ref": "PlaceIndex"
+        "Ref": "Map"
+      }
+    },
+    "Style": {
+      "Value": {
+        "Ref": "mapStyle"
       }
     }
   }

@@ -1,8 +1,8 @@
 {
-    "identityPoolName": "amplifylocpoc12aa9a9c3_identitypool_2aa9a9c3",
-    "allowUnauthenticatedIdentities": false,
-    "resourceNameTruncated": "amplif2aa9a9c3",
-    "userPoolName": "amplifylocpoc12aa9a9c3_userpool_2aa9a9c3",
+    "identityPoolName": "amazonlocationservic0c80f02e_identitypool_0c80f02e",
+    "allowUnauthenticatedIdentities": true,
+    "resourceNameTruncated": "amazon0c80f02e",
+    "userPoolName": "amazonlocationservic0c80f02e_userpool_0c80f02e",
     "autoVerifiedAttributes": [
         "email"
     ],
@@ -20,6 +20,9 @@
     "requiredAttributes": [
         "email"
     ],
+    "aliasAttributes": [
+        "email"
+    ],
     "userpoolClientGenerateSecret": false,
     "userpoolClientRefreshTokenValidity": 30,
     "userpoolClientWriteAttributes": [
@@ -28,10 +31,10 @@
     "userpoolClientReadAttributes": [
         "email"
     ],
-    "userpoolClientLambdaRole": "amplif2aa9a9c3_userpoolclient_lambda_role",
+    "userpoolClientLambdaRole": "amazon0c80f02e_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "2aa9a9c3",
-    "resourceName": "amplifylocpoc12aa9a9c3",
+    "sharedId": "0c80f02e",
+    "resourceName": "amazonlocationservic0c80f02e",
     "authSelections": "identityPoolAndUserPool",
     "authRoleArn": {
         "Fn::GetAtt": [

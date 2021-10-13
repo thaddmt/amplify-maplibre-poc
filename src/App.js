@@ -1,18 +1,27 @@
 // Existing Amplify Library
-import Amplify, { Auth } from "aws-amplify";
+import Amplify from "aws-amplify";
 import { AmplifyAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
 import { AuthState, onAuthUIStateChange } from "@aws-amplify/ui-components";
 import awsconfig from "./aws-exports";
 
 // https://github.com/aws-amplify/maplibre-gl-js-amplify
-import { AmplifyMapLibreRequest, drawPoints } from "maplibre-gl-js-amplify";
+import {
+  AmplifyMapLibreRequest,
+  drawPoints,
+  AmplifyGeocoderAPI,
+  createMap,
+  createDefaultIcon,
+  createAmplifyGeocoder,
+  // drawLine,
+} from "maplibre-gl-js-amplify";
+import "maplibre-gl-js-amplify/dist/public/amplify-geocoder.css";
 
 // https://github.com/maplibre/maplibre-gl-geocoder
-import MaplibreGeocoder from "@maplibre/maplibre-gl-geocoder";
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 
 // Maplibre
 import maplibregl, { Map } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./App.css";
 import { useEffect, useState } from "react";
 import { Geo } from "@aws-amplify/geo";
@@ -39,90 +48,82 @@ function App() {
   // When user signs in, initialize the map and add controls.
   useEffect(() => {
     async function initializeMap() {
-      const credentials = await Auth.currentCredentials();
-
-      const defaultMap = Geo.getDefaultMap();
-
-      // actually initialize the map
-      const map = new Map({
+      const map = await AmplifyMapLibreRequest.createMapLibreMap({
         container: "map",
-        center: [-123.1187, 49.2819],
-        zoom: 13,
-        style: defaultMap.mapName,
-        transformRequest: new AmplifyMapLibreRequest(credentials, "us-west-2")
-          .transformRequest,
+        center: [-122.431297, 37.773972],
+        zoom: 11,
+        region: "us-west-2",
+        maplibreMap: Map,
       });
-      setMap(map);
 
-      // Create a Geo API from the Location service apis
-      // This can be turned into a plugin so or wrapped around MaplibreGeocoder specifically for interfacing with amplify
-      // This will be moved to a plugin for geocoder
-      const geocoderApi = {
-        forwardGeocode: async (config) => {
-          const data = await Geo.searchByText(config.query, {
-            biasPosition: config.proximity,
-          });
-          const features = data.map((result) => {
-            const { geometry, ...otherResults } = result;
-            return {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: geometry.point },
-              properties: { ...otherResults },
-              place_name: otherResults.label,
-              text: otherResults.label,
-              center: geometry.point,
-            };
-          });
-          return { features };
-        },
-        reverseGeocode: async (config) => {
-          const data = await Geo.searchByCoordinates(config.query);
-          const { geometry, ...otherResults } = data;
-          const feature = {
-            type: "Feature",
-            geometry: { type: "Point", coordinates: geometry.point },
-            properties: { ...otherResults },
-            place_name: otherResults.label,
-            text: otherResults.label,
-            center: geometry.point,
-          };
-          return { features: [feature] };
-        },
-      };
-
-      const geocoder = new MaplibreGeocoder(geocoderApi, {
-        maplibregl: maplibregl,
-        showResultMarkers: true,
-        popup: true,
-        reverseGeocode: true,
-      });
+      const geocoder = createAmplifyGeocoder({});
       map.addControl(geocoder);
       geocoder.on("error", (error) => {
         console.log(error);
       });
 
-      // Render some coordinates on the map using the drawPoints method
       map.on("load", function () {
         drawPoints(
-          "foobar",
+          "myPointData",
           [
-            [-123.1187, 49.2819],
-            [-122.849, 49.1913],
+            [-122.483696, 37.833818],
+            [-122.483482, 37.833174],
+            [-122.483396, 37.8327],
+            [-122.483568, 37.832056],
+            [-122.48404, 37.831141],
+            [-122.48404, 37.830497],
+            [-122.483482, 37.82992],
+            [-122.483568, 37.829548],
+            [-122.48507, 37.829446],
+            [-122.4861, 37.828802],
+            [-122.486958, 37.82931],
+            [-122.487001, 37.830802],
+            [-122.487516, 37.831683],
+            [-122.488031, 37.832158],
+            [-122.488889, 37.832971],
+            [-122.489876, 37.832632],
+            [-122.490434, 37.832937],
+            [-122.49125, 37.832429],
+            [-122.491636, 37.832564],
+            [-122.492237, 37.833378],
+            [-122.493782, 37.833683],
           ],
           map,
           {
             showCluster: true,
             unclusteredOptions: {
               showMarkerPopup: true,
-              popupBackgroundColor: "red",
-              popupFontColor: "purple",
             },
-            clusterOptions: {
-              showCount: true,
-            },
-          },
-          defaultMap.style
+          }
         );
+      });
+
+      map.on("load", (e) => {
+        const coords = [
+          [-122.483696, 37.833818],
+          [-122.483482, 37.833174],
+          [-122.483396, 37.8327],
+          [-122.483568, 37.832056],
+          [-122.48404, 37.831141],
+          [-122.48404, 37.830497],
+          [-122.483482, 37.82992],
+          [-122.483568, 37.829548],
+          [-122.48507, 37.829446],
+          [-122.4861, 37.828802],
+          [-122.486958, 37.82931],
+          [-122.487001, 37.830802],
+          [-122.487516, 37.831683],
+          [-122.488031, 37.832158],
+          [-122.488889, 37.832971],
+          [-122.489876, 37.832632],
+          [-122.490434, 37.832937],
+          [-122.49125, 37.832429],
+          [-122.491636, 37.832564],
+          [-122.492237, 37.833378],
+          [-122.493782, 37.833683],
+        ];
+
+        // drawLine("line-source", coords, map);
       });
     }
 
